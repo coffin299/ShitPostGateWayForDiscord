@@ -1,0 +1,1 @@
+"""ShitPostGateWayBot package."""

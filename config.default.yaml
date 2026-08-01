@@ -1,0 +1,20 @@
+token: "YOUR_DISCORD_BOT_TOKEN"
+# スラッシュ同期用（任意）。未設定ならグローバル同期
+guild_ids: []
+
+# fixlink ドメイン置換（パス・クエリは維持）
+fixlink:
+  twitter.com: fxtwitter.com
+  www.twitter.com: fxtwitter.com
+  x.com: fixupx.com
+  www.x.com: fixupx.com
+  pixiv.net: phixiv.net
+  www.pixiv.net: phixiv.net
+  instagram.com: ddinstagram.com
+  www.instagram.com: ddinstagram.com
+
+permissions:
+  # 空配列 = 誰でも実行可（デフォルト）
+  reload_role_ids: []
+  shitpost_role_ids: []
+  router_role_ids: []
