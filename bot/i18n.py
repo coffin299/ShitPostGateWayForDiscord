@@ -1,4 +1,4 @@
-"""文言の読込・言語判定・スラッシュ説明への適用。"""
+"""文言の読込・言語判定・スラッシュ説明への適用（discord.py Translator）。"""
 
 from __future__ import annotations
 
@@ -6,7 +6,13 @@ import logging
 from typing import Any, Mapping, Optional, Union
 
 import discord
-from discord import app_commands
+from discord import Locale, app_commands
+from discord.app_commands import (
+    TranslationContextLocation,
+    TranslationContextTypes,
+    Translator,
+    locale_str,
+)
 
 from bot.config import app_config
 
@@ -16,10 +22,18 @@ logger = logging.getLogger(__name__)
 
 def lang_from_locale(locale: Optional[Union[discord.Locale, str]]) -> str:
     """Discord locale → ja / en（日本語以外は英語）。"""
-    # 文字列化
-    raw = str(locale or "").lower()
+    # 無しは英語
+    if locale is None:
+        return "en"
+    # Enum なら .value（'ja' 等）。str(Locale.x) 依存は避ける
+    if isinstance(locale, Locale):
+        raw = str(locale.value)
+    else:
+        raw = str(getattr(locale, "value", locale) or "")
+    # 正規化
+    raw = raw.lower().replace("_", "-")
     # ja / ja-JP など
-    if raw.startswith("ja"):
+    if raw == "ja" or raw.startswith("ja-"):
         return "ja"
     return "en"
 
@@ -58,7 +72,7 @@ def t(key: str, lang: str, **kwargs: Any) -> str:
         return key
     # 言語マップ
     if isinstance(node, Mapping):
-        text = node.get(lang) or node.get("en") or node.get("ja")
+        text = node.get(lang) or node.get("ja") or node.get("en")
         if text is None:
             return key
         text = str(text)
@@ -80,41 +94,88 @@ def ti(interaction: discord.Interaction, key: str, **kwargs: Any) -> str:
     return t(key, lang_from_interaction(interaction), **kwargs)
 
 
-def _loc_map(pair: Mapping[str, Any]) -> dict[str, str]:
-    """ja/en ペアから Discord localization dict を作る。"""
-    out: dict[str, str] = {}
-    # 日本語
-    if pair.get("ja"):
-        out["ja"] = str(pair["ja"])[:100]
-    # 英語（米・英）
-    if pair.get("en"):
-        en = str(pair["en"])[:100]
-        out["en-US"] = en
-        out["en-GB"] = en
-    return out
+def _ls(key: str, *, limit: int = 100) -> locale_str:
+    """i18n キーから locale_str を作る（Discord 既定文言は日本語）。"""
+    # 日本語を API のデフォルト description にする
+    message = t(key, "ja")[:limit]
+    # Translator が extras のキーで他言語を返す
+    return locale_str(message, i18n_key=key)
+
+
+def _key_from_context(context: TranslationContextTypes) -> Optional[str]:
+    """コンテキストから i18n キーを推定する（extras が無い場合の保険）。"""
+    location = context.location
+    data = context.data
+    # コマンド説明
+    if location is TranslationContextLocation.command_description:
+        name = getattr(data, "name", None)
+        if name:
+            return f"commands.{name}.description"
+    # オプション説明
+    if location is TranslationContextLocation.parameter_description:
+        # data は Parameter ラッパのことがある
+        cmd = getattr(data, "command", None) or getattr(data, "parent", None)
+        opt = getattr(data, "name", None)
+        cmd_name = getattr(cmd, "name", None)
+        if cmd_name and opt:
+            return f"commands.{cmd_name}.options.{opt}"
+    # Choice 名
+    if location is TranslationContextLocation.choice_name:
+        value = getattr(data, "value", None)
+        if value is not None:
+            return f"choices.remove_all_scope.{value}"
+    return None
+
+
+class I18nTranslator(Translator):
+    """i18n.yaml を使う discord.py Translator。"""
+
+    async def translate(
+        self,
+        string: locale_str,
+        locale: Locale,
+        context: TranslationContextTypes,
+    ) -> Optional[str]:
+        """同期時に各 locale 向け文言を返す。"""
+        # extras 優先
+        key = string.extras.get("i18n_key")
+        # 無ければコンテキストから
+        if not key:
+            key = _key_from_context(context)
+        # キー不明なら翻訳なし
+        if not key:
+            return None
+        # 言語
+        lang = lang_from_locale(locale)
+        # 文言
+        text = t(str(key), lang)[:100]
+        # 既定メッセージと同じなら None（Discord 推奨）
+        if text == string.message:
+            return None
+        return text
 
 
 def apply_slash_localizations(tree: app_commands.CommandTree) -> None:
-    """登録済みスラッシュへ description / option / choice の多言語を適用する。"""
+    """
+    登録済みスラッシュへ i18n の locale_str を載せる。
+    discord.py 2.x は Translator + locale_str が正式経路
+    （description_localizations の直接代入は効かない）。
+    """
     # コマンド定義
     commands_meta = app_config.i18n.get("commands") or {}
     # 選択肢定義
     choices_meta = app_config.i18n.get("choices") or {}
     # ツリー上のコマンド
     for cmd in tree.get_commands():
-        # グループは今回なし想定だが名前で引く
         meta = commands_meta.get(cmd.name)
         if not isinstance(meta, Mapping):
             continue
-        # 説明
-        desc = meta.get("description") or {}
-        if isinstance(desc, Mapping):
-            # デフォルトは英語（非日本語クライアント向け）
-            if desc.get("en"):
-                cmd.description = str(desc["en"])[:100]
-            locs = _loc_map(desc)
-            if locs:
-                cmd.description_localizations = locs  # type: ignore[assignment]
+        # コマンド説明（既定は日本語）
+        desc_key = f"commands.{cmd.name}.description"
+        if isinstance(meta.get("description"), Mapping):
+            ls = _ls(desc_key)
+            cmd.description = ls.message
+            cmd._locale_description = ls  # type: ignore[attr-defined]
         # オプション
         options = meta.get("options") or {}
         if not isinstance(options, Mapping):
@@ -124,11 +185,8 @@ def apply_slash_localizations(tree: app_commands.CommandTree) -> None:
             opt_meta = options.get(opt_name)
             if not isinstance(opt_meta, Mapping):
                 continue
-            if opt_meta.get("en"):
-                param.description = str(opt_meta["en"])[:100]
-            opt_locs = _loc_map(opt_meta)
-            if opt_locs:
-                param.description_localizations = opt_locs  # type: ignore[assignment]
+            opt_key = f"commands.{cmd.name}.options.{opt_name}"
+            param.description = _ls(opt_key)
             # remove_all の scope choices
             if opt_name == "scope" and getattr(param, "choices", None):
                 scope_map = choices_meta.get("remove_all_scope") or {}
@@ -136,8 +194,15 @@ def apply_slash_localizations(tree: app_commands.CommandTree) -> None:
                     choice_pair = scope_map.get(choice.value)
                     if not isinstance(choice_pair, Mapping):
                         continue
-                    if choice_pair.get("en"):
-                        choice.name = str(choice_pair["en"])[:100]
-                    choice_locs = _loc_map(choice_pair)
-                    if choice_locs:
-                        choice.name_localizations = choice_locs  # type: ignore[assignment]
+                    choice_key = f"choices.remove_all_scope.{choice.value}"
+                    choice_ls = _ls(choice_key)
+                    choice.name = choice_ls.message
+                    choice._locale_name = choice_ls
+
+
+async def setup_i18n(tree: app_commands.CommandTree) -> None:
+    """Translator 登録 + スラッシュ文言適用。"""
+    # Translator を載せる（同期時に翻訳が走る）
+    await tree.set_translator(I18nTranslator())
+    # locale_str / 日本語デフォルトを適用
+    apply_slash_localizations(tree)

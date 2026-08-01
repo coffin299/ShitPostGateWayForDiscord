@@ -56,9 +56,10 @@ $env:PYTHONDONTWRITEBYTECODE=1
 
 ### Language
 
-- Slash command descriptions are registered with Discord localizations (`ja` + `en-US` / `en-GB`). Default fallback is English.
-- Runtime replies (`/help`, wizard prompts, errors, settings) use `interaction.locale`: **Japanese if locale starts with `ja`, otherwise English**.
-- Edit wording in `i18n.yaml` (or the default template), then `/reload_config` (slash metadata may need a bot restart + sync to appear in Discord).
+- Slash command descriptions come from `i18n.yaml` (**Japanese is the Discord default**; English via `en-US` / `en-GB` localizations)
+- Runtime replies use `interaction.locale` (Japanese → ja, otherwise en)
+- discord.py 2.x uses a `Translator` during command sync
+- After editing strings: `/reload_config`, then restart the bot to re-sync slash metadata
 
 Routing is edge-based. For bidirectional mesh, mutual edges are created for you. Same-server channels are allowed. Each destination stores `added_by` (user ID) and `added_by_name` (username at add time).
 

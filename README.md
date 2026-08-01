@@ -63,9 +63,10 @@ $env:PYTHONDONTWRITEBYTECODE=1
 
 ### 言語（i18n）
 
-- スラッシュコマンドの description は `i18n.yaml` から日英を Discord に登録（デフォルト英語 + `ja` ローカライズ）
+- スラッシュコマンドの description は `i18n.yaml` から日英を Discord に登録（**既定は日本語**、英語クライアント向けに `en-US` / `en-GB` ローカライズ）
 - 実行時の応答・ヘルプ・ウィザードは `interaction.locale` を見て **日本語なら日本語、それ以外は英語**
-- 文言を変えたら `/reload_config`（Discord 上のコマンド説明の反映には再起動＋同期が必要な場合があります）
+- discord.py 2.x では `Translator` 経由で同期します（古い `description_localizations` 直接代入は無効）
+- 文言を変えたら `/reload_config` のあと **Bot 再起動でスラッシュ再同期**すると確実です
 
 ルーティングはエッジ方式です。双方向にしたい場合は相互にルートを追加してください。同一サーバー内の別チャンネル同士も設定できます。各転送先には追加者の `added_by`（ユーザー ID）と `added_by_name`（追加時点のユーザー名）が保存されます。
 

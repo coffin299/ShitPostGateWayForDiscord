@@ -1,5 +1,5 @@
 # Slash command / UI strings (ja + en).
-# Discord: ja clients see ja localizations; everyone else falls back to en.
+# Discord default description = Japanese; en-US/en-GB via Translator.
 # Runtime replies use interaction.locale (ja* → ja, else en).
 
 commands:

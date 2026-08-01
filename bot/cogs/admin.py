@@ -771,9 +771,9 @@ class AdminCog(commands.Cog):
             # 再読込
             app_config.reload()
             # メモリ上のスラッシュ説明も更新
-            from bot.i18n import apply_slash_localizations
+            from bot.i18n import setup_i18n
 
-            apply_slash_localizations(self.bot.tree)
+            await setup_i18n(self.bot.tree)
         except Exception as exc:
             logger.exception("reload failed")
             await interaction.response.send_message(

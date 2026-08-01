@@ -35,10 +35,10 @@ class ShitPostGateWayBot(commands.Bot):
         await self.load_extension("bot.cogs.admin")
         # ヘルプ cog
         await self.load_extension("bot.cogs.help")
-        # config の文言をスラッシュ説明へ適用
-        from bot.i18n import apply_slash_localizations
+        # i18n Translator + スラッシュ文言（discord.py 2.x 正式経路）
+        from bot.i18n import setup_i18n
 
-        apply_slash_localizations(self.tree)
+        await setup_i18n(self.tree)
 
     async def on_ready(self) -> None:
         # 起動ログ
@@ -46,10 +46,10 @@ class ShitPostGateWayBot(commands.Bot):
         # スラッシュ同期対象ギルド
         guild_ids = app_config.guild_ids
         try:
-            # 同期直前にも再適用（reload 後の再起動想定）
-            from bot.i18n import apply_slash_localizations
+            # 同期直前にも再適用
+            from bot.i18n import setup_i18n
 
-            apply_slash_localizations(self.tree)
+            await setup_i18n(self.tree)
             if guild_ids:
                 # ギルド単位で即時同期
                 for guild_id in guild_ids:
