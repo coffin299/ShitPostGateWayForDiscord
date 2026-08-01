@@ -100,10 +100,12 @@ def _sorted_text_channels(guild: discord.Guild) -> list[discord.TextChannel]:
 class RouterSession:
     """ウィザード途中状態。"""
 
-    # 予定ルート先数
+    # 予定ルート先数（one_way）または端点数（mesh）
     count: int
     # 実行者
     user_id: int
+    # one_way=単方向追加 / mesh=双方向メッシュ
+    mode: str = "one_way"
     # Bot とユーザー共通のサーバー ID（起動時に確定）
     shared_guild_ids: list[str] = field(default_factory=list)
     # フェーズ: pick_from_guild / pick_from_channel / pick_to_guild / pick_to_channel
@@ -112,12 +114,14 @@ class RouterSession:
     page: int = 0
     # 選択中サーバー（チャンネル選択前）
     pending_guild_id: Optional[str] = None
-    # 確定済み from
+    # 確定済み from（one_way）
     from_guild_id: Optional[str] = None
     from_channel_id: Optional[str] = None
-    # 確定済み to
+    # 確定済み to（one_way）
     destinations: list[tuple[str, str]] = field(default_factory=list)
-    # 次のルート先番号（1-based）
+    # 確定済み端点（mesh）
+    endpoints: list[tuple[str, str]] = field(default_factory=list)
+    # 次の番号（1-based）
     next_index: int = 1
 
 
@@ -132,8 +136,63 @@ def _guild_warning(bot: commands.Bot, guild_id: str) -> Optional[str]:
     return None
 
 
+def _endpoint_label(bot: commands.Bot, guild_id: str, channel_id: str) -> str:
+    """端点をサーバー名 / チャンネル名で返す。"""
+    guild = bot.get_guild(int(guild_id)) if guild_id.isdigit() else None
+    channel = guild.get_channel(int(channel_id)) if guild and channel_id.isdigit() else None
+    return f"{guild.name if guild else '不明'} / #{getattr(channel, 'name', '不明')}"
+
+
+async def _persist_mesh(interaction: discord.Interaction, session: RouterSession) -> None:
+    """端点同士を全双方向で routes.json へ書く。"""
+    # 2 未満はメッシュ不可
+    if len(session.endpoints) < 2:
+        await interaction.followup.send(
+            "キャンセルしました（双方向設定には2箇所以上必要です）。",
+            ephemeral=True,
+        )
+        return
+    # 件数集計
+    totals = {"added": 0, "appended": 0, "duplicate": 0}
+    added_by = str(interaction.user.id)
+    # 各端点を from にして他全員へ
+    for index, (from_guild, from_channel) in enumerate(session.endpoints):
+        # 自分以外
+        others = [
+            endpoint
+            for other_index, endpoint in enumerate(session.endpoints)
+            if other_index != index
+        ]
+        # バッチ追記
+        counts = app_config.routes_store.add_routes_batch(
+            from_guild,
+            from_channel,
+            others,
+            added_by,
+        )
+        # 合算
+        for key in totals:
+            totals[key] += counts.get(key, 0)
+    # 再読込
+    app_config.routes_store.load()
+    bot: commands.Bot = interaction.client  # type: ignore[assignment]
+    lines = [
+        "双方向メッシュを保存しました。",
+        f"追加/追記: {totals['added'] + totals['appended']} 件 / 重複スキップ: {totals['duplicate']} 件",
+        f"端点数: {len(session.endpoints)}",
+        "参加チャンネル:",
+    ]
+    for guild_id, channel_id in session.endpoints:
+        lines.append(f"- {_endpoint_label(bot, guild_id, channel_id)}")
+    await interaction.followup.send("\n".join(lines), ephemeral=True)
+
+
 async def _persist_session(interaction: discord.Interaction, session: RouterSession) -> None:
-    """確定済みだけ routes.json へ書く。"""
+    """モードに応じて保存する。"""
+    # メッシュモード
+    if session.mode == "mesh":
+        await _persist_mesh(interaction, session)
+        return
     # from または to が無ければ追加なし
     if not session.from_guild_id or not session.from_channel_id or not session.destinations:
         await interaction.followup.send(
@@ -161,9 +220,7 @@ async def _persist_session(interaction: discord.Interaction, session: RouterSess
             warnings.append(warn)
     # 表示用に名前解決
     bot: commands.Bot = interaction.client  # type: ignore[assignment]
-    from_guild = bot.get_guild(int(session.from_guild_id)) if session.from_guild_id.isdigit() else None
-    from_ch = from_guild.get_channel(int(session.from_channel_id)) if from_guild and session.from_channel_id.isdigit() else None
-    from_label = f"{from_guild.name if from_guild else '不明'} / #{getattr(from_ch, 'name', '不明')}"
+    from_label = _endpoint_label(bot, session.from_guild_id, session.from_channel_id)
     lines = [
         "ルートを保存しました。",
         f"追加/追記: {counts.get('added', 0) + counts.get('appended', 0)} 件 / 重複スキップ: {counts.get('duplicate', 0)} 件",
@@ -171,15 +228,24 @@ async def _persist_session(interaction: discord.Interaction, session: RouterSess
         "ルート先:",
     ]
     for guild_id, channel_id in session.destinations:
-        guild = bot.get_guild(int(guild_id)) if guild_id.isdigit() else None
-        channel = guild.get_channel(int(channel_id)) if guild and channel_id.isdigit() else None
-        lines.append(f"- {guild.name if guild else '不明'} / #{getattr(channel, 'name', '不明')}")
+        lines.append(f"- {_endpoint_label(bot, guild_id, channel_id)}")
     lines.extend(warnings)
     await interaction.followup.send("\n".join(lines), ephemeral=True)
 
 
 def _phase_prompt(session: RouterSession) -> str:
     """現在フェーズの案内文。"""
+    # メッシュ: 端点選択
+    if session.mode == "mesh":
+        if session.phase in ("pick_to_guild", "pick_from_guild"):
+            return (
+                f"双方向メッシュ {session.next_index}/{session.count} の "
+                "**サーバー** を選んでください。"
+            )
+        return (
+            f"双方向メッシュ {session.next_index}/{session.count} の "
+            "**チャンネル** を選んでください。"
+        )
     # from サーバー選択
     if session.phase == "pick_from_guild":
         return "ルート元の **サーバー** を選んでください。"
@@ -306,7 +372,35 @@ class RouterWizardView(ui.View):
                         return
                     guild_id = self.session.pending_guild_id
                     channel_id = str(sel.values[0])
-                    # from 確定
+                    # メッシュ: 端点を積む
+                    if self.session.mode == "mesh":
+                        endpoint = (guild_id, channel_id)
+                        # 同一チャンネルの二重選択を拒否
+                        if endpoint in self.session.endpoints:
+                            await interaction.response.send_message(
+                                "同じチャンネルは既に選ばれています。別のチャンネルを選んでください。",
+                                ephemeral=True,
+                            )
+                            return
+                        self.session.endpoints.append(endpoint)
+                        self.session.pending_guild_id = None
+                        self.session.page = 0
+                        # 予定数に達したら全双方向保存
+                        if len(self.session.endpoints) >= self.session.count:
+                            _sessions.pop(self.session.user_id, None)
+                            self.stop()
+                            await interaction.response.edit_message(
+                                content="双方向メッシュを保存しています…",
+                                view=None,
+                            )
+                            await _persist_session(interaction, self.session)
+                            return
+                        # 次の端点へ
+                        self.session.next_index = len(self.session.endpoints) + 1
+                        self.session.phase = "pick_to_guild"
+                        await self._refresh(interaction)
+                        return
+                    # from 確定（one_way）
                     if self.session.phase == "pick_from_channel":
                         self.session.from_guild_id = guild_id
                         self.session.from_channel_id = channel_id
@@ -316,7 +410,7 @@ class RouterWizardView(ui.View):
                         self.session.phase = "pick_to_guild"
                         await self._refresh(interaction)
                         return
-                    # to 確定
+                    # to 確定（one_way）
                     self.session.destinations.append((guild_id, channel_id))
                     self.session.pending_guild_id = None
                     self.session.page = 0
@@ -452,6 +546,58 @@ class AdminCog(commands.Cog):
             ephemeral=True,
         )
 
+    async def _start_router_wizard(
+        self,
+        interaction: discord.Interaction,
+        *,
+        count: int,
+        mode: str,
+    ) -> None:
+        """共通のルート設定ウィザードを開始する。"""
+        # 権限
+        if not app_config.is_allowed("router_role_ids", _member_role_ids(interaction)):
+            await interaction.response.send_message(
+                "このコマンドを実行する権限がありません。",
+                ephemeral=True,
+            )
+            return
+        # Bot 未参加
+        if not self.bot.guilds:
+            await interaction.response.send_message(
+                "Bot が参加しているサーバーがありません。",
+                ephemeral=True,
+            )
+            return
+        # 共通サーバー判定のため defer
+        await interaction.response.defer(ephemeral=True)
+        # 共通サーバー列挙
+        shared = await _shared_guilds(self.bot, interaction.user.id)
+        if not shared:
+            await interaction.followup.send(
+                "あなたと Bot の両方が参加しているサーバーがありません。",
+                ephemeral=True,
+            )
+            return
+        # 初期フェーズ（mesh は端点選択から）
+        phase = "pick_to_guild" if mode == "mesh" else "pick_from_guild"
+        # セッション
+        session = RouterSession(
+            count=int(count),
+            user_id=interaction.user.id,
+            mode=mode,
+            shared_guild_ids=[str(guild.id) for guild in shared],
+            phase=phase,
+            next_index=1,
+        )
+        _sessions[interaction.user.id] = session
+        # View 表示
+        view = RouterWizardView(self.bot, session)
+        await interaction.followup.send(
+            _phase_prompt(session),
+            view=view,
+            ephemeral=True,
+        )
+
     @app_commands.command(
         name="shitposting_router",
         description="転送ルート追加用の選択パネルを開く",
@@ -462,47 +608,21 @@ class AdminCog(commands.Cog):
         interaction: discord.Interaction,
         count: app_commands.Range[int, 1, _MAX_COUNT] = 1,
     ) -> None:
-        """参加サーバー / チャンネルのプルダウンでルートを追加する。"""
-        # 権限
-        if not app_config.is_allowed("router_role_ids", _member_role_ids(interaction)):
-            await interaction.response.send_message(
-                "このコマンドを実行する権限がありません。",
-                ephemeral=True,
-            )
-            return
-        # Bot がどのサーバーにも居ない
-        if not self.bot.guilds:
-            await interaction.response.send_message(
-                "Bot が参加しているサーバーがありません。",
-                ephemeral=True,
-            )
-            return
-        # 応答を遅延（共通サーバー判定に API が必要なため）
-        await interaction.response.defer(ephemeral=True)
-        # Bot と実行者の共通サーバーを列挙
-        shared = await _shared_guilds(self.bot, interaction.user.id)
-        # 共通が無ければ終了
-        if not shared:
-            await interaction.followup.send(
-                "あなたと Bot の両方が参加しているサーバーがありません。",
-                ephemeral=True,
-            )
-            return
-        # セッション作成（共通サーバー ID を固定）
-        session = RouterSession(
-            count=int(count),
-            user_id=interaction.user.id,
-            shared_guild_ids=[str(guild.id) for guild in shared],
-        )
-        _sessions[interaction.user.id] = session
-        # ウィザード View
-        view = RouterWizardView(self.bot, session)
-        # ephemeral パネル
-        await interaction.followup.send(
-            _phase_prompt(session),
-            view=view,
-            ephemeral=True,
-        )
+        """単方向（from → to）ルートを追加する。"""
+        await self._start_router_wizard(interaction, count=int(count), mode="one_way")
+
+    @app_commands.command(
+        name="shitposting_router_mesh",
+        description="複数チャンネルを双方向メッシュで一括接続する",
+    )
+    @app_commands.describe(count="双方向にする鯖（チャンネル）数。同じ数だけ選択します")
+    async def shitposting_router_mesh(
+        self,
+        interaction: discord.Interaction,
+        count: app_commands.Range[int, 2, _MAX_COUNT],
+    ) -> None:
+        """選んだ N チャンネルを相互に双方向接続する。"""
+        await self._start_router_wizard(interaction, count=int(count), mode="mesh")
 
 
 async def setup(bot: commands.Bot) -> None:

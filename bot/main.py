@@ -29,10 +29,12 @@ class ShitPostGateWayBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self) -> None:
-        # gateway / admin cog を読み込む
+        # gateway / admin / help cog を読み込む
         await self.load_extension("bot.cogs.gateway")
         # ルーター・リロード cog
         await self.load_extension("bot.cogs.admin")
+        # ヘルプ cog
+        await self.load_extension("bot.cogs.help")
 
     async def on_ready(self) -> None:
         # 起動ログ

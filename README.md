@@ -7,9 +7,11 @@
 ## できること
 
 - `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、ルート先へ転送
-- `/shitposting_router` … Modal で転送ルートを追加（複数先はウィザード）
+- `/shitposting_router` … 単方向ルートをプルダウンで追加
+- `/shitposting_router_mesh` … 複数チャンネルを双方向メッシュで一括接続
 - `/show_settings` … このチャンネルをルート元とする設定を表示
 - `/reload_config` … `config.yaml` と `routes.json` を再読み込み
+- `/help` … Components V2 でコマンド案内を表示
 
 投稿本文の例:
 
@@ -70,9 +72,22 @@ Modal の ID 手入力はやめ、**Bot が参加しているサーバー / テ�
 - サーバー一覧は **実行者と Bot の両方に参加があるサーバーのみ**
 - 「キャンセル（ここまでで設定）」で未確定分を捨て、確定済みだけ `routes.json` に保存
 
+### `/shitposting_router_mesh count:`
+
+選んだ N 個のチャンネルを **相互双方向（メッシュ）** でつなぎます。送信チャンネル数＝鯖数の想定で、同じ数だけサーバー→チャンネルを選びます。
+
+- `count` は 2 以上（双方向には最低 2 箇所）
+- 例: A/B/C を選ぶと A↔B、A↔C、B↔C 相当のエッジを一括追加
+- 途中キャンセル時は、確定済みが 2 箇所以上ならその範囲だけでメッシュ化
+- サーバー一覧は実行者と Bot の共通サーバーのみ
+
 ### `/show_settings`
 
 ルート元チャンネルで実行すると、サーバー名・チャンネル名だけで設定を表示します（ID は出しません）。未設定ならその旨を表示します。
+
+### `/help`
+
+Components V2（LayoutView / Container）でコマンド一覧と補足を表示します。実行者のみに見えます。
 
 ### `/reload_config`
 
