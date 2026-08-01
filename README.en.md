@@ -22,11 +22,11 @@ One `/shitpost` posts a fixlinked URL locally and fans it out across your config
 Post body example:
 
 ```text
--# ShitPostGateWayBot From [username](https://discord.com/users/123456789012345678)
+-# ShitPostGateWayBot From [username](<https://discord.com/users/123456789012345678>)
 https://fxtwitter.com/...
 ```
 
-The username is a profile URL link (not an `@` mention — no ping). Use `/shitpost` `silent:true` to suppress push notifications (default is normal).
+The username is a profile URL link (not an `@` mention — no ping). Profile URLs are wrapped in `<>` to suppress their embed while keeping the fixlink preview. Use `/shitpost` `silent:true` to suppress push notifications (default is normal).
 
 ## Setup
 

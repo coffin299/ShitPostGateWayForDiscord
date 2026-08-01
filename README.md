@@ -22,11 +22,11 @@
 投稿本文の例:
 
 ```text
--# ShitPostGateWayBot From [username](https://discord.com/users/123456789012345678)
+-# ShitPostGateWayBot From [username](<https://discord.com/users/123456789012345678>)
 https://fxtwitter.com/...
 ```
 
-ユーザー名はメンションではなくプロフィール URL のリンクです（クリックでプロフィール表示・通知なし）。投稿・転送の通知は `/shitpost` の `silent` で選べます（省略時は通常通知）。
+ユーザー名はメンションではなくプロフィール URL のリンクです（クリックでプロフィール表示・通知なし）。プロフィール URL は `<>` で embed 抑制し、fixlink のプレビューは残します。投稿・転送の通知は `/shitpost` の `silent` で選べます（省略時は通常通知）。
 
 ## セットアップ
 

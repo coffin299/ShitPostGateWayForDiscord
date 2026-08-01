@@ -241,8 +241,8 @@ def _build_post_content(username: str, user_id: int, fixed_url: str) -> str:
     """投稿本文（サブテキスト + URL）を組み立てる。"""
     # メンション (<@id>) は通知になるため、プロフィール URL の Markdown リンクにする
     profile = f"https://discord.com/users/{user_id}"
-    # クリックでユーザープロフィールを開ける
-    name_link = f"[{username}]({profile})"
+    # <> でプロフィール URL の embed / プレビューだけ抑制（fixlink 側の embed は残す）
+    name_link = f"[{username}](<{profile}>)"
     # Discord の -# サブテキスト行 + fixlink URL
     return f"-# ShitPostGateWayBot From {name_link}\n{fixed_url}"
 
