@@ -40,6 +40,7 @@ def resolve_destinations(
                     "guild_id": guild_id,
                     "channel_id": channel_id,
                     "added_by": str(item.get("added_by", "")),
+                    "added_by_name": str(item.get("added_by_name", "")),
                 }
             )
     return destinations

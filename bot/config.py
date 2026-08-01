@@ -16,21 +16,31 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 # 実運用の YAML / テンプレ YAML
 CONFIG_PATH = ROOT_DIR / "config.yaml"
 CONFIG_DEFAULT_PATH = ROOT_DIR / "config.default.yaml"
+# 文言 YAML / テンプレ
+I18N_PATH = ROOT_DIR / "i18n.yaml"
+I18N_DEFAULT_PATH = ROOT_DIR / "i18n.default.yaml"
 # 実運用の routes JSON / テンプレ JSON
 ROUTES_PATH = ROOT_DIR / "routes.json"
 ROUTES_DEFAULT_PATH = ROOT_DIR / "routes.default.json"
 
 
 class AppConfig:
-    """config.yaml と routes.json をまとめて保持する。"""
+    """config.yaml・i18n.yaml・routes.json をまとめて保持する。"""
 
     def __init__(self) -> None:
         # 並行アクセス用ロック
         self._lock = threading.RLock()
         # YAML 生データ
         self._data: dict[str, Any] = {}
+        # 文言データ
+        self._i18n: dict[str, Any] = {}
         # ルート永続化ストア
         self.routes_store = RoutesStore(ROUTES_PATH, ROUTES_DEFAULT_PATH)
+
+    @property
+    def i18n(self) -> dict[str, Any]:
+        """文言ツリー（読み取り専用想定）。"""
+        return self._i18n
 
     @property
     def token(self) -> str:
@@ -85,6 +95,11 @@ class AppConfig:
                 raise FileNotFoundError(f"missing {CONFIG_DEFAULT_PATH}")
             # 実ファイルを生成
             shutil.copyfile(CONFIG_DEFAULT_PATH, CONFIG_PATH)
+        # i18n.yaml も同様
+        if not I18N_PATH.exists():
+            if not I18N_DEFAULT_PATH.exists():
+                raise FileNotFoundError(f"missing {I18N_DEFAULT_PATH}")
+            shutil.copyfile(I18N_DEFAULT_PATH, I18N_PATH)
         # routes.json 側も同様
         self.routes_store.ensure_file()
 
@@ -99,6 +114,12 @@ class AppConfig:
                 raise ValueError("config.yaml must be a mapping")
             # メモリへ格納する
             self._data = loaded
+            # 文言
+            with I18N_PATH.open("r", encoding="utf-8") as fp:
+                i18n_loaded = yaml.safe_load(fp) or {}
+            if not isinstance(i18n_loaded, dict):
+                raise ValueError("i18n.yaml must be a mapping")
+            self._i18n = i18n_loaded
             # ルートも読み込む
             self.routes_store.load()
 

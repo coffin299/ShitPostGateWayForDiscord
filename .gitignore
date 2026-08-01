@@ -1,4 +1,5 @@
 # Local secrets / runtime config
+i18n.yaml
 config.yaml
 routes.json
 

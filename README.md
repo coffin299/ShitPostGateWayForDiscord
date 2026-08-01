@@ -4,21 +4,29 @@
 
 `/shitpost` 一発で fixlink 付き投稿をし、設定したチャンネル群へ同時転送します。
 
+> English README: [README.en.md](./README.en.md)
+
 ## できること
 
-- `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、ルート先へ転送
+- `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、送受信メッシュ先へ転送
 - `/shitposting_router` … 単方向ルートをプルダウンで追加
-- `/shitposting_router_mesh` … 複数チャンネルを双方向メッシュで一括接続
-- `/show_settings` … このチャンネルをルート元とする設定を表示
+- `/shitposting_router_mesh` … 複数チャンネルを双方向の送受信メッシュで一括接続
+- `/shitposting_router_mesh_add` … 既存の送受信メッシュにチャンネルを追加
+- `/shitposting_router_remove` … 送受信メッシュの転送先を1件解除（チャンネル ID）
+- `/shitposting_router_remove_all` … 送受信メッシュ一括削除
+- `/show_settings` … このサーバーにおける自分の送受信メッシュ一覧
+- `/show_settings_admin` … 【管理者】全ユーザーの送受信メッシュ一覧（V2・ページング）
 - `/reload_config` … `config.yaml` と `routes.json` を再読み込み
 - `/help` … Components V2 でコマンド案内を表示
 
 投稿本文の例:
 
 ```text
--# ShitPostGateWayBot From username
+-# ShitPostGateWayBot From [username](https://discord.com/users/123456789012345678)
 https://fxtwitter.com/...
 ```
+
+ユーザー名はメンションではなくプロフィール URL のリンクです（クリックでプロフィール表示・通知なし）。投稿・転送は `silent`（通知なし）です。
 
 ## セットアップ
 
@@ -41,6 +49,8 @@ $env:PYTHONDONTWRITEBYTECODE=1
 | :--- | :--- |
 | `config.default.yaml` | テンプレ（リポジトリ同梱） |
 | `config.yaml` | トークン・fixlink・権限（起動時に自動生成・gitignore） |
+| `i18n.default.yaml` | コマンド説明・UI 文言（日英・リポジトリ同梱） |
+| `i18n.yaml` | 文言の実行用コピー（起動時に自動生成・gitignore） |
 | `routes.default.json` | ルート空テンプレ |
 | `routes.json` | 転送ルート（コマンドで追記・gitignore） |
 
@@ -51,7 +61,13 @@ $env:PYTHONDONTWRITEBYTECODE=1
 - `fixlink` … ドメイン置換表
 - `permissions.*_role_ids` … 空なら誰でも実行可
 
-ルーティングはエッジ方式です。双方向にしたい場合は相互にルートを追加してください。同一サーバー内の別チャンネル同士も設定できます。
+### 言語（i18n）
+
+- スラッシュコマンドの description は `i18n.yaml` から日英を Discord に登録（デフォルト英語 + `ja` ローカライズ）
+- 実行時の応答・ヘルプ・ウィザードは `interaction.locale` を見て **日本語なら日本語、それ以外は英語**
+- 文言を変えたら `/reload_config`（Discord 上のコマンド説明の反映には再起動＋同期が必要な場合があります）
+
+ルーティングはエッジ方式です。双方向にしたい場合は相互にルートを追加してください。同一サーバー内の別チャンネル同士も設定できます。各転送先には追加者の `added_by`（ユーザー ID）と `added_by_name`（追加時点のユーザー名）が保存されます。
 
 ## コマンド詳細
 
@@ -61,6 +77,7 @@ $env:PYTHONDONTWRITEBYTECODE=1
 
 - Bot 未参加サーバー / 取得できないチャンネルはスキップ
 - **NSFW チャンネルで実行した場合、転送先も NSFW のみ**（非 NSFW 先はスキップ）
+- ルート／メッシュ作成時も、実行チャンネルや選んだ元が NSFW なら候補リストは NSFW チャンネルのみ
 
 ### `/shitposting_router count:`
 
@@ -74,16 +91,46 @@ Modal の ID 手入力はやめ、**Bot が参加しているサーバー / テ�
 
 ### `/shitposting_router_mesh count:`
 
-選んだ N 個のチャンネルを **相互双方向（メッシュ）** でつなぎます。送信チャンネル数＝鯖数の想定で、同じ数だけサーバー→チャンネルを選びます。
+選んだ N 個のチャンネルを **相互双方向の送受信メッシュ** でつなぎます。`count` は送信先チャンネル数（同じ数だけ選ぶ）です。
 
-- `count` は 2 以上（双方向には最低 2 箇所）
-- 例: A/B/C を選ぶと A↔B、A↔C、B↔C 相当のエッジを一括追加
-- 途中キャンセル時は、確定済みが 2 箇所以上ならその範囲だけでメッシュ化
+- `count` は送信先チャンネル数（2 以上）
+- 例: A/B/C を選ぶと A↔B、A↔C、B↔C のように、選んだチャンネル同士が相互に転送し合う
+- 途中キャンセル時は、確定済みが 2 チャンネル以上ならその範囲だけでメッシュ化
 - サーバー一覧は実行者と Bot の共通サーバーのみ
+
+### `/shitposting_router_mesh_add count:`
+
+**既に送受信メッシュに入っているチャンネル上で実行**し、追加するチャンネルを選びます。新規分は既存メンバー全員と双方向接続されます。
+
+- `count` は追加する送信先チャンネル数（省略時 1）
+
+### `/shitposting_router_remove channel_id:`
+
+**ルート元チャンネルで実行**し、送受信メッシュの転送先チャンネル ID を指定して1件解除します。
+
+### `/shitposting_router_remove_all scope:`
+
+送受信メッシュの一括削除です。
+
+| scope | 動作 |
+| :--- | :--- |
+| このチャンネルからの送信メッシュを全削除 | 実行チャンネルを from とするエントリを削除 |
+| このチャンネルを送受信メッシュから除外 | 送信元としても受信先としても消す |
+| すべての送受信メッシュを削除 | `routes.json` を空にする（確認ボタンあり） |
 
 ### `/show_settings`
 
-ルート元チャンネルで実行すると、サーバー名・チャンネル名だけで設定を表示します（ID は出しません）。未設定ならその旨を表示します。
+サーバー内のどのチャンネルでも実行できます。**あなたが追加した送受信メッシュだけ**（`added_by` = ユーザー ID）を表示します。
+
+- **送信** … この鯖のどのチャンネルから、どこへ送るか
+- **受信** … この鯖のどのチャンネルが、どこから受け取るか
+- いま実行したチャンネルが送受信のどれに当たるか
+
+他人の送受信メッシュは見えません。追加者は **名前 + ユーザー ID** で表示します。
+
+### `/show_settings_admin`
+
+**サーバーオーナー**または **Administrator** 権限向けです（Discord 上も管理者向けに表示）。このサーバーに関係する **全ユーザー** の送受信メッシュを、追加者ごと（**名前 + ユーザー ID**）に Components V2 で表示します（名前は鯖内メンバー優先、いなければ保存済み `added_by_name`）。長い場合は「前へ / 次へ」でページングします（実行者のみ・ephemeral）。
 
 ### `/help`
 
@@ -91,7 +138,7 @@ Components V2（LayoutView / Container）でコマンド一覧と補足を表示
 
 ### `/reload_config`
 
-`config.yaml` と `routes.json` を再読み込みします。
+`config.yaml`・`i18n.yaml`・`routes.json` を再読み込みします。
 
 ## fixlink 対応（デフォルト）
 
@@ -106,5 +153,5 @@ Components V2（LayoutView / Container）でコマンド一覧と補足を表示
 
 ## 注意
 
-- `config.yaml` / `routes.json` / `.venv` は git 管理しません
-- コマンドの説明文は日本語、`start.bat` 内メッセージは英語（文字化け対策）です
+- `config.yaml` / `i18n.yaml` / `routes.json` / `.venv` は git 管理しません
+- コマンド説明・UI 文言は `i18n.yaml`（日英）。`start.bat` 内メッセージは英語（文字化け対策）です

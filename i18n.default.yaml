@@ -1,0 +1,479 @@
+# Slash command / UI strings (ja + en).
+# Discord: ja clients see ja localizations; everyone else falls back to en.
+# Runtime replies use interaction.locale (ja* → ja, else en).
+
+commands:
+  shitpost:
+    description:
+      ja: "URL を fixlink して投稿し、送受信メッシュへ転送する"
+      en: "Fixlink a URL, post it here, and forward to your mesh"
+    options:
+      url:
+        ja: "X / pixiv / Instagram などの投稿 URL"
+        en: "Post URL (X / Twitter, pixiv, Instagram, …)"
+
+  shitposting_router:
+    description:
+      ja: "単方向の転送ルートを追加する（サーバー→チャンネル選択）"
+      en: "Add a one-way forward route (pick server → channel)"
+    options:
+      count:
+        ja: "追加する転送先の数（省略時 1）"
+        en: "Number of destinations to add (default 1)"
+
+  shitposting_router_mesh:
+    description:
+      ja: "選んだチャンネル同士を双方向の送受信メッシュでつなぐ"
+      en: "Connect chosen channels into a bidirectional send/receive mesh"
+    options:
+      count:
+        ja: "メッシュに含めるチャンネル数（2 以上）"
+        en: "How many channels to include in the mesh (2+)"
+
+  shitposting_router_mesh_add:
+    description:
+      ja: "既存の送受信メッシュにチャンネルを追加する"
+      en: "Add channels to an existing send/receive mesh"
+    options:
+      count:
+        ja: "追加するチャンネル数（省略時 1）"
+        en: "How many channels to add (default 1)"
+
+  shitposting_router_remove:
+    description:
+      ja: "送受信メッシュの転送先を 1 件だけ解除する"
+      en: "Remove one mesh destination from this channel"
+    options:
+      channel_id:
+        ja: "解除する転送先チャンネル ID"
+        en: "Destination channel ID to remove"
+
+  shitposting_router_remove_all:
+    description:
+      ja: "送受信メッシュを一括削除する"
+      en: "Delete send/receive mesh routes in bulk"
+    options:
+      scope:
+        ja: "削除する範囲"
+        en: "What to delete"
+
+  show_settings:
+    description:
+      ja: "このサーバーでの自分の送受信メッシュを表示する"
+      en: "Show your send/receive mesh for this server"
+
+  show_settings_admin:
+    description:
+      ja: "【管理者】このサーバーの全ユーザーの送受信メッシュを表示する"
+      en: "[Admin] Show every user's send/receive mesh on this server"
+
+  reload_config:
+    description:
+      ja: "config / i18n / routes を再読み込みする"
+      en: "Reload config, i18n, and routes"
+
+  help:
+    description:
+      ja: "コマンド一覧と使い方を表示する"
+      en: "Show commands and how to use them"
+
+choices:
+  remove_all_scope:
+    source:
+      ja: "このチャンネルからの送信メッシュを全削除"
+      en: "Delete all outbound mesh routes from this channel"
+    purge:
+      ja: "このチャンネルを送受信メッシュから除外"
+      en: "Remove this channel from the mesh (send + receive)"
+    all:
+      ja: "すべての送受信メッシュを削除"
+      en: "Delete all send/receive mesh routes"
+
+help:
+  title:
+    ja: "## ShitPostGateWayBOT"
+    en: "## ShitPostGateWayBOT"
+  intro:
+    ja: "複数の界隈にいるのに、同じ投稿をサーバーごと貼るのが面倒な人向けのゲートウェイです。"
+    en: "A gateway for people in multiple communities who are tired of pasting the same post into every server."
+  commands_heading:
+    ja: "### コマンド一覧"
+    en: "### Commands"
+  tips_heading:
+    ja: "### 補足"
+    en: "### Notes"
+  tips_body:
+    ja: |
+      - fixlink 対応: X / Twitter・pixiv・Instagram
+      - NSFW チャンネルからの転送先は NSFW のみ（ルート／メッシュ候補も NSFW に限定）
+      - ルート設定のサーバー一覧は、あなたと Bot の共通サーバーのみ
+      - 投稿には `-# ShitPostGateWayBot From [name](プロフィールURL)` が付きます（メンション通知なし）
+      - 投稿・転送は silent（端末通知なし）
+      - 表示言語は Discord のユーザー言語（日本語以外は英語）
+    en: |
+      - Fixlink: X / Twitter, pixiv, Instagram
+      - NSFW sources only forward to NSFW destinations (route/mesh pickers also filter to NSFW)
+      - Route pickers only list servers you and the bot both share
+      - Posts are prefixed with `-# ShitPostGateWayBot From [name](profile URL)` (no mention ping)
+      - Origin and forwards are silent (no push notifications)
+      - UI language follows your Discord locale (Japanese → ja, otherwise en)
+  blocks:
+    shitpost:
+      ja: |
+        **`/shitpost`**
+        URL を fixlink してこのチャンネルに投稿し、送受信メッシュ先へ同時転送します。
+        -# 応答（件数）は実行者のみに表示
+      en: |
+        **`/shitpost`**
+        Fixlink a URL, post it here, and fan it out to your mesh.
+        -# The count reply is visible only to you
+    shitposting_router:
+      ja: |
+        **`/shitposting_router`**
+        単方向ルートを追加します。サーバー → チャンネルをプルダウンで選択。
+        -# `count` で転送先の数を指定（省略時 1）
+      en: |
+        **`/shitposting_router`**
+        Add a one-way route. Pick server → channel from dropdowns.
+        -# `count` sets how many destinations (default 1)
+    shitposting_router_mesh:
+      ja: |
+        **`/shitposting_router_mesh`**
+        選んだチャンネル同士を双方向の送受信メッシュで一括接続します。
+        -# `count` はメッシュに含めるチャンネル数（2 以上）
+      en: |
+        **`/shitposting_router_mesh`**
+        Wire chosen channels into a bidirectional send/receive mesh.
+        -# `count` is how many channels to include (2+)
+    shitposting_router_mesh_add:
+      ja: |
+        **`/shitposting_router_mesh_add`**
+        既存の送受信メッシュにチャンネルを追加します（メッシュ内チャンネルで実行）。
+        -# `count` は追加するチャンネル数
+      en: |
+        **`/shitposting_router_mesh_add`**
+        Add channels to an existing mesh (run inside a mesh member channel).
+        -# `count` is how many channels to add
+    shitposting_router_remove:
+      ja: |
+        **`/shitposting_router_remove`**
+        送受信メッシュの転送先を、チャンネル ID 指定で 1 件解除します。
+      en: |
+        **`/shitposting_router_remove`**
+        Remove one mesh destination by channel ID.
+    shitposting_router_remove_all:
+      ja: |
+        **`/shitposting_router_remove_all`**
+        送受信メッシュ一括削除（このチャンネルの送信 / 完全除外 / すべて削除）。
+      en: |
+        **`/shitposting_router_remove_all`**
+        Bulk-delete mesh routes (outbound from here / purge channel / delete all).
+    show_settings:
+      ja: |
+        **`/show_settings`**
+        このサーバーにおける自分の送受信メッシュ一覧を表示します（他人の設定は見えません）。
+      en: |
+        **`/show_settings`**
+        Show your send/receive mesh on this server (other users' routes stay hidden).
+    show_settings_admin:
+      ja: |
+        **`/show_settings_admin`**
+        【オーナー / Administrator】全ユーザーの送受信メッシュを Components V2 で表示（ページングあり）。
+      en: |
+        **`/show_settings_admin`**
+        [Owner / Administrator] Show every user's mesh via Components V2 (paginated).
+    reload_config:
+      ja: |
+        **`/reload_config`**
+        `config.yaml`・`i18n.yaml`・`routes.json` を再読み込みします。
+      en: |
+        **`/reload_config`**
+        Reload `config.yaml`, `i18n.yaml`, and `routes.json`.
+    help:
+      ja: |
+        **`/help`**
+        このヘルプを表示します。
+      en: |
+        **`/help`**
+        Show this help.
+
+msg:
+  no_permission:
+    ja: "このコマンドを実行する権限がありません。"
+    en: "You don't have permission to run this command."
+  guild_only:
+    ja: "サーバー内で実行してください。"
+    en: "Run this command inside a server."
+  guild_channel_only:
+    ja: "サーバーのチャンネルで実行してください。"
+    en: "Run this on a server channel."
+  no_bot_guilds:
+    ja: "Bot が参加しているサーバーがありません。"
+    en: "The bot is not in any servers."
+  no_shared_guilds:
+    ja: "あなたと Bot の両方が参加しているサーバーがありません。"
+    en: "There are no servers that both you and the bot share."
+  mesh_run_inside:
+    ja: "メッシュに参加しているチャンネル上で実行してください。"
+    en: "Run this from a channel that already belongs to a mesh."
+  mesh_not_member:
+    ja: |
+      このチャンネルは双方向メッシュに参加していないようです。
+      先に `/shitposting_router_mesh` で作成するか、メッシュ内のチャンネルで実行してください。
+    en: |
+      This channel does not appear to be in a bidirectional mesh.
+      Create one with `/shitposting_router_mesh`, or run this from a mesh member channel.
+  remove_failed:
+    ja: "解除できませんでした。このチャンネルをルート元とする該当の転送先がありません。"
+    en: "Nothing removed. No matching destination from this channel as a source."
+  remove_ok:
+    ja: "転送先を解除しました: {label}"
+    en: "Removed destination: {label}"
+  clear_all_confirm:
+    ja: "本当に **すべての送受信メッシュ** を削除しますか？この操作は取り消せません。"
+    en: "Really delete **all send/receive mesh routes**? This cannot be undone."
+  clear_source_empty:
+    ja: "このチャンネルをルート元とする設定はありません。"
+    en: "There are no outbound mesh routes from this channel."
+  clear_source_ok:
+    ja: "このチャンネルからの送信メッシュを削除しました（宛先 {removed} 件）。"
+    en: "Deleted outbound mesh from this channel ({removed} destination(s))."
+  clear_purge_ok:
+    ja: |
+      このチャンネルを送受信メッシュから除外しました。
+      - 送信メッシュ削除: {from_removed}
+      - 他メッシュの受信指定から除去: {to_removed} 件
+    en: |
+      Removed this channel from the mesh.
+      - Outbound routes removed: {from_removed}
+      - Removed as a destination elsewhere: {to_removed}
+  clear_all_ok:
+    ja: "すべての送受信メッシュを削除しました（from エントリ {count} 件）。"
+    en: "Deleted all mesh routes ({count} source entr(y/ies))."
+  clear_all_cancelled:
+    ja: "削除をキャンセルしました。"
+    en: "Delete cancelled."
+  owner_only_button:
+    ja: "この操作は実行者のみ可能です。"
+    en: "Only the user who started this can use these controls."
+  reload_ok:
+    ja: "設定を再読み込みしました（config / i18n / routes）。"
+    en: "Reloaded config, i18n, and routes."
+  reload_fail:
+    ja: "再読み込みに失敗しました。ログを確認してください。"
+    en: "Reload failed. Check the bot logs."
+  wizard_busy:
+    ja: "既に設定ウィザードが開いています。先に完了するか、キャンセルしてください。"
+    en: "A setup wizard is already open. Finish or cancel it first."
+  mesh_need_two:
+    ja: "キャンセルしました（双方向設定にはチャンネルが2つ以上必要です）。"
+    en: "Cancelled (a mesh needs at least 2 channels)."
+  mesh_saved:
+    ja: |
+      双方向メッシュを保存しました（選んだチャンネル同士が相互に送り合います）。
+      追加/追記: {changed} 件 / 重複スキップ: {duplicate} 件
+      送信先チャンネル数: {count}
+      メッシュ参加チャンネル:
+    en: |
+      Bidirectional mesh saved (chosen channels forward to each other).
+      Added/updated: {changed} / skipped duplicates: {duplicate}
+      Channel count: {count}
+      Mesh member channels:
+  mesh_add_empty:
+    ja: "キャンセルしました（追加チャンネルがありません）。"
+    en: "Cancelled (no channels to add)."
+  mesh_add_missing:
+    ja: "既存メッシュが見つかりませんでした。"
+    en: "Could not find an existing mesh."
+  mesh_add_saved:
+    ja: |
+      既存の双方向メッシュにチャンネルを追加しました。
+      追加/追記: {changed} 件 / 重複スキップ: {duplicate} 件
+      追加したチャンネル数: {count}
+      追加分:
+    en: |
+      Added channels to the existing bidirectional mesh.
+      Added/updated: {changed} / skipped duplicates: {duplicate}
+      Channels added: {count}
+      Newly added:
+  mesh_members_label:
+    ja: "メッシュ参加チャンネル:"
+    en: "Mesh member channels:"
+  mesh_already_in:
+    ja: "そのチャンネルは既にメッシュに含まれています。"
+    en: "That channel is already in the mesh."
+  route_cancel_empty:
+    ja: "キャンセルしました（ルートは追加されていません）。"
+    en: "Cancelled (no routes were added)."
+  route_saved:
+    ja: |
+      ルートを保存しました。
+      追加/追記: {changed} 件 / 重複スキップ: {duplicate} 件
+      ルート元: {from_label}
+      ルート先:
+    en: |
+      Route saved.
+      Added/updated: {changed} / skipped duplicates: {duplicate}
+      Source: {from_label}
+      Destinations:
+  saving:
+    ja: "ルートを保存しています…"
+    en: "Saving routes…"
+  guild_warn:
+    ja: "警告: Bot がサーバー `{guild_id}` に未参加です（投稿時はスキップされます）"
+    en: "Warning: the bot is not in server `{guild_id}` (posts there will be skipped)"
+  prompt_mesh_guild:
+    ja: "送受信メッシュ {index}/{total} の **サーバー** を選んでください。"
+    en: "Pick the **server** for mesh channel {index}/{total}."
+  prompt_mesh_channel:
+    ja: "送受信メッシュ {index}/{total} の **チャンネル** を選んでください。"
+    en: "Pick the **channel** for mesh slot {index}/{total}."
+  prompt_mesh_add_guild:
+    ja: "追加するチャンネル {index}/{total} の **サーバー** を選んでください。"
+    en: "Pick the **server** for new channel {index}/{total}."
+  prompt_mesh_add_channel:
+    ja: "追加するチャンネル {index}/{total} の **チャンネル** を選んでください。"
+    en: "Pick the **channel** for new slot {index}/{total}."
+  prompt_from_guild:
+    ja: "ルート元の **サーバー** を選んでください。"
+    en: "Pick the **source server**."
+  prompt_from_channel:
+    ja: "ルート元の **チャンネル** を選んでください。"
+    en: "Pick the **source channel**."
+  prompt_to_guild:
+    ja: "ルート先 {index}/{total} の **サーバー** を選んでください。"
+    en: "Pick the **destination server** ({index}/{total})."
+  prompt_to_channel:
+    ja: "ルート先 {index}/{total} の **チャンネル** を選んでください。"
+    en: "Pick the **destination channel** ({index}/{total})."
+  btn_prev:
+    ja: "前へ"
+    en: "Prev"
+  btn_next:
+    ja: "次へ"
+    en: "Next"
+  btn_cancel_save:
+    ja: "キャンセル（ここまでで設定）"
+    en: "Cancel (save what's done)"
+  btn_confirm_delete:
+    ja: "すべて削除する"
+    en: "Delete everything"
+  btn_abort:
+    ja: "やめる"
+    en: "Never mind"
+  select_guild_placeholder:
+    ja: "サーバーを選択"
+    en: "Select a server"
+  select_channel_placeholder:
+    ja: "チャンネルを選択"
+    en: "Select a channel"
+  select_channel_nsfw_placeholder:
+    ja: "NSFW チャンネルを選択"
+    en: "Select an NSFW channel"
+  shitpost_no_routes_empty:
+    ja: "routes.json にルートがありません。`/shitposting_router` または `/shitposting_router_mesh` で先に設定してください。"
+    en: "No routes in routes.json yet. Set some up with `/shitposting_router` or `/shitposting_router_mesh` first."
+  shitpost_no_routes_here:
+    ja: "このチャンネルはルート元として登録されていません。メッシュ／ルート設定で選んだチャンネル上で実行するか、`/show_settings` で確認してください。"
+    en: "This channel is not registered as a source. Run `/shitpost` from a mesh/route channel, or check `/show_settings`."
+  shitpost_done:
+    ja: "送信 {ok} 件 / スキップ {skip} 件"
+    en: "Sent {ok} / skipped {skip}"
+  shitpost_all_failed:
+    ja: |
+      送信 {ok} 件 / スキップ {skip} 件
+      転送先は登録されていますが送れませんでした。Bot の送信権限、または NSFW 制限を確認してください。
+    en: |
+      Sent {ok} / skipped {skip}
+      Destinations exist, but sends failed. Check bot send permissions or NSFW limits.
+  settings_none:
+    ja: "**{guild}** には、あなたのルーティング設定がありません。"
+    en: "**{guild}** has no routing settings of yours."
+  settings_header:
+    ja: |
+      **{guild}** — あなたの送受信メッシュ
+      追加者: **{user}**
+    en: |
+      **{guild}** — your send/receive mesh
+      Added by: **{user}**
+  settings_send:
+    ja: "### 送信（この鯖から外へ）"
+    en: "### Outbound (from this server)"
+  settings_recv:
+    ja: "### 受信（外からこの鯖へ）"
+    en: "### Inbound (into this server)"
+  settings_none_item:
+    ja: "- （なし）"
+    en: "- (none)"
+  settings_here_roles:
+    ja: "いまのチャンネル: {roles}"
+    en: "This channel: {roles}"
+  settings_here_none:
+    ja: "いまのチャンネル: あなたの送受信には未登録"
+    en: "This channel: not in your send/receive mesh"
+  settings_role_send:
+    ja: "送信元"
+    en: "source"
+  settings_role_recv:
+    ja: "受信先"
+    en: "destination"
+  admin_header:
+    ja: "## {guild} — 送受信メッシュ一覧（管理者）"
+    en: "## {guild} — send/receive mesh (admin)"
+  admin_page:
+    ja: "ページ **{page} / {total}**　・　全ユーザー（名前 + ID）別"
+    en: "Page **{page} / {total}** · all users (name + ID)"
+  admin_no_routes:
+    ja: "このサーバーに関係するルートはありません。"
+    en: "No routes involve this server."
+  admin_empty_page:
+    ja: "（表示する内容がありません）"
+    en: "(nothing to show)"
+  admin_denied:
+    ja: "このコマンドはサーバーオーナーまたは Administrator 権限のあるメンバーだけが使えます。"
+    en: "Only the server owner or members with Administrator can use this."
+  label_send:
+    ja: "**送信**"
+    en: "**Outbound**"
+  label_recv:
+    ja: "**受信**"
+    en: "**Inbound**"
+  unknown_user:
+    ja: "不明"
+    en: "unknown"
+  empty_selection:
+    ja: "選択が空です。"
+    en: "Nothing was selected."
+  duplicate_pick:
+    ja: "同じチャンネルは既に選ばれています。別のチャンネルを選んでください。"
+    en: "That channel is already selected. Pick a different one."
+  cancel_processing:
+    ja: "キャンセル処理中…"
+    en: "Cancelling…"
+  channel_id_digits:
+    ja: "channel_id は数字で指定してください。"
+    en: "channel_id must be a number."
+  no_category:
+    ja: "カテゴリなし"
+    en: "No category"
+  guild_missing:
+    ja: "（サーバーが見つかりません）"
+    en: "(server not found)"
+  no_text_channels:
+    ja: "（このサーバーにテキストチャンネルがありません）"
+    en: "(no text channels in this server)"
+  no_nsfw_text_channels:
+    ja: "（このサーバーに NSFW テキストチャンネルがありません。元が NSFW のため NSFW のみ選べます）"
+    en: "(no NSFW text channels here; source is NSFW so only NSFW channels are listed)"
+  reload_fail_detail:
+    ja: "再読み込みに失敗しました: {error}"
+    en: "Reload failed: {error}"
+  guild_text_only:
+    ja: "サーバーのテキストチャンネルで実行してください。"
+    en: "Run this in a server text channel."
+  post_origin_fail:
+    ja: "このチャンネルへの投稿に失敗しました。"
+    en: "Failed to post in this channel."
+  shitpost_no_dest:
+    ja: "転送先がありません。投稿のみ完了しました。\n{tip}"
+    en: "No destinations. Local post only.\n{tip}"
