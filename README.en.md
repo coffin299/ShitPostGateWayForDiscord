@@ -61,7 +61,7 @@ $env:PYTHONDONTWRITEBYTECODE=1
 - discord.py 2.x uses a `Translator` during command sync
 - After editing strings: `/reload_config`, then restart the bot to re-sync slash metadata
 
-Routing is edge-based. For bidirectional mesh, mutual edges are created for you. Same-server channels are allowed. Each destination stores `added_by` (user ID) and `added_by_name` (username at add time).
+Routing is edge-based. For bidirectional mesh, mutual edges are created for you. Same-server channels are allowed. Each destination stores `added_by` (user ID) and `added_by_name` (username). When someone runs a slash command, any stored `added_by_name` for their ID is updated in `routes.json` if their username changed.
 
 ## Command notes
 

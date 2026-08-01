@@ -38,7 +38,32 @@ class ShitPostGateWayBot(commands.Bot):
         # i18n Translator + スラッシュ文言（discord.py 2.x 正式経路）
         from bot.i18n import setup_i18n
 
+        # i18n Translator + スラッシュ文言（discord.py 2.x 正式経路）
+        from bot.i18n import setup_i18n
+
         await setup_i18n(self.tree)
+
+        # スラッシュ実行直前に added_by_name を同期（コマンド本体より先）
+        from bot.routes_store import sync_user_added_by_name
+
+        @self.tree.interaction_check
+        async def _sync_added_by_name(interaction: discord.Interaction) -> bool:
+            # スラッシュ実行時のみ（オートコンプリートは頻繁なので除外）
+            if interaction.type is not discord.InteractionType.application_command:
+                return True
+            user = interaction.user
+            if user is None:
+                return True
+            try:
+                # JSON を先に更新（投稿・表示より前）
+                sync_user_added_by_name(user)
+            except Exception:
+                logger.exception(
+                    "Failed to sync added_by_name for user %s",
+                    user.id,
+                )
+            # 常にコマンド続行
+            return True
 
     async def on_ready(self) -> None:
         # 起動ログ

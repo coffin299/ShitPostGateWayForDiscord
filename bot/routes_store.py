@@ -317,3 +317,55 @@ class RoutesStore:
             # 保存
             self.save()
             return count
+
+    def sync_added_by_name(self, user_id: str, current_name: str) -> int:
+        """
+        同一 added_by の added_by_name を現在名に揃える。
+        変更した to エントリ数を返す（0 なら未保存）。
+        """
+        # ID / 名前を正規化
+        uid = str(user_id or "").strip()
+        name = str(current_name or "").strip()
+        # 不正は何もしない
+        if not uid or not name:
+            return 0
+        with self._lock:
+            # 更新件数
+            updated = 0
+            # 全ルートの to を走査
+            for route in self._routes:
+                destinations = route.get("to") or []
+                for item in destinations:
+                    # dict 以外は無視
+                    if not isinstance(item, dict):
+                        continue
+                    # 別ユーザーはスキップ
+                    if str(item.get("added_by", "")) != uid:
+                        continue
+                    # 既に同じ名前ならスキップ
+                    if str(item.get("added_by_name", "")) == name:
+                        continue
+                    # 名前を更新
+                    item["added_by_name"] = name
+                    updated += 1
+            # 1件以上なら JSON へ書く
+            if updated:
+                self.save()
+            return updated
+
+
+def sync_user_added_by_name(user: Any) -> str:
+    """
+    実行者の現在名を routes.json に反映してから、使うべきユーザー名を返す。
+    投稿・表示の前に呼ぶこと。
+    """
+    # 遅延 import（循環回避）
+    from bot.config import app_config
+
+    # 現在のグローバル名
+    current_name = str(getattr(user, "name", "") or "")
+    user_id = str(getattr(user, "id", "") or "")
+    # 名前が取れるときだけ JSON を先に更新
+    if user_id and current_name:
+        app_config.routes_store.sync_added_by_name(user_id, current_name)
+    return current_name

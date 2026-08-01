@@ -14,7 +14,7 @@ from bot.config import app_config
 from bot.fixlink import apply_fixlink
 from bot.i18n import lang_from_interaction, t, ti
 from bot.router import resolve_destinations
-from bot.routes_store import added_by_id, added_by_name
+from bot.routes_store import added_by_id, added_by_name, sync_user_added_by_name
 
 # モジュールロガー
 logger = logging.getLogger(__name__)
@@ -332,8 +332,8 @@ class GatewayCog(commands.Cog):
         # 処理開始を遅延応答（後で followup / edit）
         await interaction.response.defer(ephemeral=True)
         lang = lang_from_interaction(interaction)
-        # ユーザーネーム（nick ではなく name）
-        username = interaction.user.name
+        # 先に routes.json の added_by_name を更新してから投稿する
+        username = sync_user_added_by_name(interaction.user)
         # fixlink 変換
         fixed_url = apply_fixlink(url, app_config.fixlink_map)
         # 投稿本文（プロフィールリンク付き・メンションしない）
@@ -342,7 +342,7 @@ class GatewayCog(commands.Cog):
         origin = interaction.channel
         assert origin is not None
         try:
-            # 実行チャンネルへ先に投稿（silent はオプション）
+            # JSON 更新後に実行チャンネルへ投稿
             await origin.send(content, silent=silent)
         except discord.HTTPException as exc:
             # 投稿失敗
@@ -455,6 +455,8 @@ class GatewayCog(commands.Cog):
                 ephemeral=True,
             )
             return
+        # 最新ルートを読む前に、実行者の保存名を現在名へ更新
+        sync_user_added_by_name(interaction.user)
         # 最新ルートを読む
         try:
             app_config.routes_store.load()
@@ -599,6 +601,8 @@ class GatewayCog(commands.Cog):
                 ephemeral=True,
             )
             return
+        # 表示前に実行者名を JSON へ反映（他人分は触れないが整合のため）
+        sync_user_added_by_name(interaction.user)
         # 最新ルート
         try:
             app_config.routes_store.load()
