@@ -40,13 +40,11 @@ class ShitPostGateWayBot(commands.Bot):
 
         # i18n Translator + スラッシュ文言（discord.py 2.x 正式経路）
         from bot.i18n import setup_i18n
+        from bot.routes_store import sync_user_added_by_name
 
         await setup_i18n(self.tree)
 
-        # スラッシュ実行直前に added_by_name を同期（コマンド本体より先）
-        from bot.routes_store import sync_user_added_by_name
-
-        @self.tree.interaction_check
+        # interaction_check はデコレータではなくメソッド上書き（await される）
         async def _sync_added_by_name(interaction: discord.Interaction) -> bool:
             # スラッシュ実行時のみ（オートコンプリートは頻繁なので除外）
             if interaction.type is not discord.InteractionType.application_command:
@@ -64,6 +62,9 @@ class ShitPostGateWayBot(commands.Bot):
                 )
             # 常にコマンド続行
             return True
+
+        # CommandTree.interaction_check を差し替え
+        self.tree.interaction_check = _sync_added_by_name  # type: ignore[method-assign]
 
     async def on_ready(self) -> None:
         # 起動ログ
