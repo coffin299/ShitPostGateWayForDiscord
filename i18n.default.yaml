@@ -11,6 +11,9 @@ commands:
       url:
         ja: "X / pixiv / Instagram などの投稿 URL"
         en: "Post URL (X / Twitter, pixiv, Instagram, …)"
+      silent:
+        ja: "通知なしで投稿するか（省略時は false＝通常通知）"
+        en: "Post without push notifications (default false = normal)"
 
   shitposting_router:
     description:
@@ -108,25 +111,25 @@ help:
       - NSFW チャンネルからの転送先は NSFW のみ（ルート／メッシュ候補も NSFW に限定）
       - ルート設定のサーバー一覧は、あなたと Bot の共通サーバーのみ
       - 投稿には `-# ShitPostGateWayBot From [name](プロフィールURL)` が付きます（メンション通知なし）
-      - 投稿・転送は silent（端末通知なし）
+      - `/shitpost` の `silent` で通知なしにできます（省略時は通常通知）
       - 表示言語は Discord のユーザー言語（日本語以外は英語）
     en: |
       - Fixlink: X / Twitter, pixiv, Instagram
       - NSFW sources only forward to NSFW destinations (route/mesh pickers also filter to NSFW)
       - Route pickers only list servers you and the bot both share
       - Posts are prefixed with `-# ShitPostGateWayBot From [name](profile URL)` (no mention ping)
-      - Origin and forwards are silent (no push notifications)
+      - `/shitpost` `silent:true` disables push notifications (default: normal)
       - UI language follows your Discord locale (Japanese → ja, otherwise en)
   blocks:
     shitpost:
       ja: |
         **`/shitpost`**
         URL を fixlink してこのチャンネルに投稿し、送受信メッシュ先へ同時転送します。
-        -# 応答（件数）は実行者のみに表示
+        -# `silent` で通知なし（省略時 false＝通常通知）。応答件数は実行者のみ
       en: |
         **`/shitpost`**
         Fixlink a URL, post it here, and fan it out to your mesh.
-        -# The count reply is visible only to you
+        -# `silent:true` for no push notifications (default false). Count reply is only for you
     shitposting_router:
       ja: |
         **`/shitposting_router`**

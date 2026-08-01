@@ -8,7 +8,7 @@
 
 ## できること
 
-- `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、送受信メッシュ先へ転送
+- `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、送受信メッシュ先へ転送（`silent` オプションあり）
 - `/shitposting_router` … 単方向ルートをプルダウンで追加
 - `/shitposting_router_mesh` … 複数チャンネルを双方向の送受信メッシュで一括接続
 - `/shitposting_router_mesh_add` … 既存の送受信メッシュにチャンネルを追加
@@ -26,7 +26,7 @@
 https://fxtwitter.com/...
 ```
 
-ユーザー名はメンションではなくプロフィール URL のリンクです（クリックでプロフィール表示・通知なし）。投稿・転送は `silent`（通知なし）です。
+ユーザー名はメンションではなくプロフィール URL のリンクです（クリックでプロフィール表示・通知なし）。投稿・転送の通知は `/shitpost` の `silent` で選べます（省略時は通常通知）。
 
 ## セットアップ
 
@@ -71,9 +71,11 @@ $env:PYTHONDONTWRITEBYTECODE=1
 
 ## コマンド詳細
 
-### `/shitpost url:`
+### `/shitpost url: [silent:]`
 
 実行チャンネルに投稿したうえで、そのチャンネルをルート元とする先へ転送します。応答（件数）は実行者のみに見えます。
+
+- `silent` … `true` は通知なし、`false`（省略時）は通常通知
 
 - Bot 未参加サーバー / 取得できないチャンネルはスキップ
 - **NSFW チャンネルで実行した場合、転送先も NSFW のみ**（非 NSFW 先はスキップ）

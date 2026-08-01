@@ -300,8 +300,16 @@ class GatewayCog(commands.Cog):
         name="shitpost",
         description="Fixlink a URL, post it here, and forward to your mesh",
     )
-    @app_commands.describe(url="Post URL (X / Twitter, pixiv, Instagram, …)")
-    async def shitpost(self, interaction: discord.Interaction, url: str) -> None:
+    @app_commands.describe(
+        url="Post URL (X / Twitter, pixiv, Instagram, …)",
+        silent="Post without push notifications (default false)",
+    )
+    async def shitpost(
+        self,
+        interaction: discord.Interaction,
+        url: str,
+        silent: bool = False,
+    ) -> None:
         """URL を fixlink して実行チャンネル＋ルート先へ送る。"""
         # 権限チェック（空なら全員可）
         if not app_config.is_allowed("shitpost_role_ids", _member_role_ids(interaction)):
@@ -334,8 +342,8 @@ class GatewayCog(commands.Cog):
         origin = interaction.channel
         assert origin is not None
         try:
-            # 実行チャンネルへ先に投稿（通知なし）
-            await origin.send(content, silent=True)
+            # 実行チャンネルへ先に投稿（silent はオプション）
+            await origin.send(content, silent=silent)
         except discord.HTTPException as exc:
             # 投稿失敗
             logger.warning("Failed to post in origin channel: %s", exc)
@@ -413,8 +421,8 @@ class GatewayCog(commands.Cog):
                 skipped += 1
                 continue
             try:
-                # 転送投稿（通知なし）
-                await channel.send(content, silent=True)
+                # 転送投稿（silent はオプションと同じ）
+                await channel.send(content, silent=silent)
                 # 成功
                 sent += 1
             except discord.HTTPException as exc:

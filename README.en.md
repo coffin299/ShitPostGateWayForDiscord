@@ -8,7 +8,7 @@ One `/shitpost` posts a fixlinked URL locally and fans it out across your config
 
 ## Features
 
-- `/shitpost` — fixlink (X / pixiv / Instagram), post here, forward to mesh destinations
+- `/shitpost` — fixlink (X / pixiv / Instagram), post here, forward to mesh (`silent` option)
 - `/shitposting_router` — add a one-way route via dropdowns
 - `/shitposting_router_mesh` — connect channels into a bidirectional send/receive mesh
 - `/shitposting_router_mesh_add` — add channels to an existing mesh
@@ -26,7 +26,7 @@ Post body example:
 https://fxtwitter.com/...
 ```
 
-The username is a profile URL link (not an `@` mention — no ping). Origin and forward posts use `silent=True` (no push notifications).
+The username is a profile URL link (not an `@` mention — no ping). Use `/shitpost` `silent:true` to suppress push notifications (default is normal).
 
 ## Setup
 
@@ -67,6 +67,8 @@ Routing is edge-based. For bidirectional mesh, mutual edges are created for you.
 ### `/shitpost`
 
 Posts in the current channel, then forwards to destinations registered for that channel as a source. The count reply is ephemeral.
+
+- `silent` — `true` = no push notifications; `false` (default) = normal notifications
 
 - Skips servers the bot is not in / channels it cannot resolve
 - **NSFW sources only forward to NSFW destinations**
