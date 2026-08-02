@@ -9,6 +9,7 @@ One `/shitpost` posts a fixlinked URL locally and fans it out across your config
 ## Features
 
 - `/shitpost` — fixlink (X / pixiv / Instagram), post here, forward to mesh (`silent` option)
+- `/fixlink` — convert URL to fixlink and post here (no forward; `link fixed via` attribution)
 - `/shitposting_router` — add a one-way route via dropdowns
 - `/shitposting_router_mesh` — connect channels into a bidirectional send/receive mesh
 - `/shitposting_router_mesh_add` — add channels to an existing mesh
@@ -22,7 +23,14 @@ One `/shitpost` posts a fixlinked URL locally and fans it out across your config
 Post body example:
 
 ```text
--# ShitPostGateWayBot From [username](<https://discord.com/users/123456789012345678>)
+-# ShitPostGateWayBot shared by [username](<https://discord.com/users/123456789012345678>)
+https://fxtwitter.com/...
+```
+
+`/fixlink` example:
+
+```text
+-# link fixed via [username](<https://discord.com/users/123456789012345678>)
 https://fxtwitter.com/...
 ```
 
@@ -74,6 +82,10 @@ Posts in the current channel, then forwards to destinations registered for that 
 - Skips servers the bot is not in / channels it cannot resolve
 - **NSFW sources only forward to NSFW destinations**
 - Route/mesh pickers also list **NSFW channels only** when the run channel or chosen source is NSFW
+
+### `/fixlink url:`
+
+Converts the URL to a fixlink domain and **posts it publicly in this channel**. No mesh forward. Attribution is `-# link fixed via [username](<profile>)` (same profile-URL embed suppression as `/shitpost`). Uses the same permission gate as `/shitpost` (`shitpost_role_ids`).
 
 ### Mesh commands
 

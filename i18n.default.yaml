@@ -15,6 +15,15 @@ commands:
         ja: "通知なしで投稿するか（省略時は false＝通常通知）"
         en: "Post without push notifications (default false = normal)"
 
+  fixlink:
+    description:
+      ja: "URL を fixlink に変換してこのチャンネルに投稿する（転送なし）"
+      en: "Convert a URL to its fixlink form and post it here (no forward)"
+    options:
+      url:
+        ja: "X / pixiv / Instagram などの投稿 URL"
+        en: "Post URL (X / Twitter, pixiv, Instagram, …)"
+
   shitposting_router:
     description:
       ja: "単方向の転送ルートを追加する（サーバー→チャンネル選択）"
@@ -110,14 +119,16 @@ help:
       - fixlink 対応: X / Twitter・pixiv・Instagram
       - NSFW チャンネルからの転送先は NSFW のみ（ルート／メッシュ候補も NSFW に限定）
       - ルート設定のサーバー一覧は、あなたと Bot の共通サーバーのみ
-      - 投稿には `-# ShitPostGateWayBot From [name](プロフィールURL)` が付きます（メンション通知なし）
+      - `/shitpost` 投稿には `-# ShitPostGateWayBot shared by [name](プロフィールURL)` が付きます（メンション通知なし）
+      - `/fixlink` 投稿には `-# link fixed via [name](プロフィールURL)` が付きます（転送なし・embed 抑制あり）
       - `/shitpost` の `silent` で通知なしにできます（省略時は通常通知）
       - 表示言語は Discord のユーザー言語（日本語以外は英語）
     en: |
       - Fixlink: X / Twitter, pixiv, Instagram
       - NSFW sources only forward to NSFW destinations (route/mesh pickers also filter to NSFW)
       - Route pickers only list servers you and the bot both share
-      - Posts are prefixed with `-# ShitPostGateWayBot From [name](profile URL)` (no mention ping)
+      - `/shitpost` posts are prefixed with `-# ShitPostGateWayBot shared by [name](profile URL)` (no mention ping)
+      - `/fixlink` posts are prefixed with `-# link fixed via [name](profile URL)` (no forward; profile embed suppressed)
       - `/shitpost` `silent:true` disables push notifications (default: normal)
       - UI language follows your Discord locale (Japanese → ja, otherwise en)
   blocks:
@@ -130,6 +141,15 @@ help:
         **`/shitpost`**
         Fixlink a URL, post it here, and fan it out to your mesh.
         -# `silent:true` for no push notifications (default false). Count reply is only for you
+    fixlink:
+      ja: |
+        **`/fixlink`**
+        URL を fixlink に変換して公開投稿します（メッシュ転送なし）。
+        -# 署名は `-# link fixed via [name](プロフィール)`（プロフィール URL は embed 抑制）
+      en: |
+        **`/fixlink`**
+        Convert a URL to fixlink and post it here (no mesh forward).
+        -# Attribution: `-# link fixed via [name](profile)` (profile URL embed suppressed)
     shitposting_router:
       ja: |
         **`/shitposting_router`**

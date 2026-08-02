@@ -13,6 +13,7 @@ _ACCENT = discord.Color.from_rgb(38, 148, 140)
 # ヘルプに載せるコマンド順
 _HELP_BLOCK_KEYS = (
     "shitpost",
+    "fixlink",
     "shitposting_router",
     "shitposting_router_mesh",
     "shitposting_router_mesh_add",

@@ -9,6 +9,7 @@
 ## できること
 
 - `/shitpost` … URL を fixlink（X / pixiv / Instagram）して投稿し、送受信メッシュ先へ転送（`silent` オプションあり）
+- `/fixlink` … URL を fixlink に変換してこのチャンネルへ投稿（転送なし・`link fixed via` 署名）
 - `/shitposting_router` … 単方向ルートをプルダウンで追加
 - `/shitposting_router_mesh` … 複数チャンネルを双方向の送受信メッシュで一括接続
 - `/shitposting_router_mesh_add` … 既存の送受信メッシュにチャンネルを追加
@@ -22,7 +23,14 @@
 投稿本文の例:
 
 ```text
--# ShitPostGateWayBot From [username](<https://discord.com/users/123456789012345678>)
+-# ShitPostGateWayBot shared by [username](<https://discord.com/users/123456789012345678>)
+https://fxtwitter.com/...
+```
+
+`/fixlink` の例:
+
+```text
+-# link fixed via [username](<https://discord.com/users/123456789012345678>)
 https://fxtwitter.com/...
 ```
 
@@ -81,6 +89,10 @@ $env:PYTHONDONTWRITEBYTECODE=1
 - Bot 未参加サーバー / 取得できないチャンネルはスキップ
 - **NSFW チャンネルで実行した場合、転送先も NSFW のみ**（非 NSFW 先はスキップ）
 - ルート／メッシュ作成時も、実行チャンネルや選んだ元が NSFW なら候補リストは NSFW チャンネルのみ
+
+### `/fixlink url:`
+
+URL を fixlink ドメインへ変換し、**このチャンネルへ公開投稿**します。メッシュ転送はしません。署名は `-# link fixed via [username](<プロフィール>)`（`/shitpost` と同じくプロフィール URL の embed 抑制）。権限は `/shitpost` と同じ（`shitpost_role_ids`）。
 
 ### `/shitposting_router count:`
 

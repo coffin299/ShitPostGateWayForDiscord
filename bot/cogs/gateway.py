@@ -1,4 +1,4 @@
-"""/shitpost・/show_settings・/show_settings_admin。"""
+"""/shitpost・/fixlink・/show_settings・/show_settings_admin。"""
 
 from __future__ import annotations
 
@@ -237,14 +237,28 @@ def _member_role_ids(interaction: discord.Interaction) -> set[int]:
     return {role.id for role in interaction.user.roles}
 
 
-def _build_post_content(username: str, user_id: int, fixed_url: str) -> str:
-    """投稿本文（サブテキスト + URL）を組み立てる。"""
+def _profile_name_link(username: str, user_id: int) -> str:
+    """プロフィール URL の Markdown リンク（embed 抑制付き）を作る。"""
     # メンション (<@id>) は通知になるため、プロフィール URL の Markdown リンクにする
     profile = f"https://discord.com/users/{user_id}"
     # <> でプロフィール URL の embed / プレビューだけ抑制（fixlink 側の embed は残す）
-    name_link = f"[{username}](<{profile}>)"
+    return f"[{username}](<{profile}>)"
+
+
+def _build_post_content(username: str, user_id: int, fixed_url: str) -> str:
+    """/shitpost 用本文（サブテキスト + URL）を組み立てる。"""
+    # 署名リンク
+    name_link = _profile_name_link(username, user_id)
     # Discord の -# サブテキスト行 + fixlink URL
-    return f"-# ShitPostGateWayBot From {name_link}\n{fixed_url}"
+    return f"-# ShitPostGateWayBot shared by {name_link}\n{fixed_url}"
+
+
+def _build_fixlink_content(username: str, user_id: int, fixed_url: str) -> str:
+    """/fixlink 用本文（署名サブテキスト + URL）を組み立てる。"""
+    # 署名リンク
+    name_link = _profile_name_link(username, user_id)
+    # embed の上に署名、下に fixlink URL
+    return f"-# link fixed via {name_link}\n{fixed_url}"
 
 
 def _channel_is_nsfw(channel: discord.abc.GuildChannel) -> bool:
@@ -440,6 +454,36 @@ class GatewayCog(commands.Cog):
             t("msg.shitpost_done", lang, ok=sent, skip=skipped),
             ephemeral=True,
         )
+
+    @app_commands.command(
+        name="fixlink",
+        description="Convert a URL to its fixlink form and post it here",
+    )
+    @app_commands.describe(
+        url="Post URL (X / Twitter, pixiv, Instagram, …)",
+    )
+    async def fixlink(
+        self,
+        interaction: discord.Interaction,
+        url: str,
+    ) -> None:
+        """URL を fixlink 変換して、署名付きでこのチャンネルへ公開投稿する（転送なし）。"""
+        # 権限チェック（shitpost と同じロール制限）
+        if not app_config.is_allowed("shitpost_role_ids", _member_role_ids(interaction)):
+            # 拒否を ephemeral で返す
+            await interaction.response.send_message(
+                ti(interaction, "msg.no_permission"),
+                ephemeral=True,
+            )
+            return
+        # fixlink 変換（未対応ホストはそのまま）
+        fixed_url = apply_fixlink(url, app_config.fixlink_map)
+        # 表示名（メンションしない署名用）
+        username = interaction.user.display_name
+        # 署名（embed 抑制）+ URL
+        content = _build_fixlink_content(username, interaction.user.id, fixed_url)
+        # 公開返信として投稿（メッシュ転送なし）
+        await interaction.response.send_message(content)
 
     @app_commands.command(
         name="show_settings",
